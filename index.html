@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <style>
+    html {
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+
+    svg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="svg">
+    <svg style="overflow: visible"></svg>
+  </div>
+
+  <script src='https://d3js.org/d3.v3.min.js'></script>
+  <script>
+    const svg = d3.select('svg'),
+      data = [],
+      forces = [],
+      color = d3.scale.category10(),
+      dimensions = [
+        [200, 200],
+        [200, 400],
+        [400, 400],
+        [400, 600],
+        [600, 600],
+        [600, 800],
+        [800, 800],
+        [1000, 200],
+        [1000, 400],
+        [1500, 1000],
+      ]
+
+    function generateNodes(count) {
+      return d3.range(count + 1).map(() => {
+        return {
+          radius: Math.random() * 12 + 120
+        }
+      })
+    }
+
+    function generateOrbs(data, force, index, dimensions) {
+      force.size(dimensions[index]);
+      force.start();
+
+      const circle = svg.selectAll('#circle-' + index)
+
+      circle.data(data.nodes.slice(1))
+        .enter().append('circle')
+        .attr("r", d => d.radius)
+        .style("fill", (d, i) => color(index % 3));
+
+      force.on("tick", () => {
+        svg.selectAll('circle')
+          .attr("cx", d => d.x)
+          .attr("cy", d => d.y);
+      });
+    }
+
+    for (let i = 0; i < 10; i++) {
+      data[i] = {
+        nodes: generateNodes(1)
+      }
+      data[i].root = data[i].nodes[0]
+      data[i].root.radius = 0
+      data[i].root.fixed = true
+
+      forces[i] = d3.layout.force()
+        .gravity(0.7)
+        .charge((d, i) => i ? 0 : -8000)
+        .nodes(data[i].nodes);
+    }
+
+    data.forEach((data, i) => {
+      generateOrbs(data, forces[i], i, dimensions)
+    })
+
+    svg.on("mousemove", function () {
+      let p1 = d3.mouse(this);
+
+      data.forEach((data, i) => {
+        data.root.px = p1[0];
+        data.root.py = p1[1];
+        forces[i].resume();
+      })
+    });
+  </script>
+</body>
+
+</html>
